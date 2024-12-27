@@ -1,7 +1,28 @@
 #[macro_export]
-macro_rules! parse_obj_single {
+macro_rules! parse_objs {
+    ($file_path:expr) => {
+        crate::obj::Obj3D::parse_string(include_str!($file_path)).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! parse_obj {
     ($file_path:expr) => {
         crate::obj::Obj3D::parse_string_single(include_str!($file_path)).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! parse_n_objs {
+    ($file_path:expr, $n:expr) => {
+        crate::obj::Obj3D::parse_string_n(include_str!($file_path), $n).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! parse_first_obj {
+    ($file_path:expr) => {
+        parse_n_objs!($file_path, 1)
     };
 }
 
@@ -9,7 +30,7 @@ macro_rules! parse_obj_single {
 macro_rules! mesh_fn_from_obj {
     ($file_path:expr) => {
         || {
-            let o = crate::parse_obj_single!($file_path);
+            let o = crate::parse_obj!($file_path);
 
             let mut positions = Vec::new();
             let mut uv = Vec::new();

@@ -56,11 +56,15 @@ impl Vertex {
     pub fn to_arr(&self) -> [f32; 3] {
         [self.x, self.y, self.z]
     }
+
+    fn to_line(&self) -> String {
+        format!("{} {}", ObjToken::V, self.to_string())
+    }
 }
 
 impl fmt::Display for Vertex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{:.9}, {:.9}, {:.9}]", self.x, self.y, self.z)
+        write!(f, "{:.9} {:.9} {:.9}", self.x, self.y, self.z)
     }
 }
 
@@ -111,11 +115,15 @@ impl Normal {
     pub fn to_arr(&self) -> [f32; 3] {
         [self.x, self.y, self.z]
     }
+
+    fn to_line(&self) -> String {
+        format!("{} {}", ObjToken::Vn, self.to_string())
+    }
 }
 
 impl fmt::Display for Normal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{:.9}, {:.9}, {:.9}]", self.x, self.y, self.z)
+        write!(f, "{:.9} {:.9} {:.9}", self.x, self.y, self.z)
     }
 }
 
@@ -165,11 +173,15 @@ impl UVTexture {
     pub fn to_arr(&self) -> [f32; 2] {
         [self.h, self.v]
     }
+
+    fn to_line(&self) -> String {
+        format!("{} {}", ObjToken::Vt, self.to_string())
+    }
 }
 
 impl fmt::Display for UVTexture {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{:.9}, {:.9}]", self.h, self.v)
+        write!(f, "{:.9} {:.9}", self.h, self.v)
     }
 }
 
@@ -199,6 +211,12 @@ impl FromStr for UVTexture {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Smoothing(pub u8);
+
+impl Smoothing {
+    fn to_line(&self) -> String {
+        format!("{} {}", ObjToken::S, self.to_string())
+    }
+}
 
 impl fmt::Display for Smoothing {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -245,6 +263,16 @@ impl FaceDefinition {
     }
 }
 
+impl fmt::Display for FaceDefinition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}/{}/{}",
+            self.vertex_index, self.uv_texture_index, self.normal_index,
+        )
+    }
+}
+
 impl FromStr for FaceDefinition {
     type Err = Error;
 
@@ -272,6 +300,10 @@ impl Face {
     pub fn new(face_defs: Vec<FaceDefinition>) -> Self {
         Self { face_defs }
     }
+
+    fn to_line(&self) -> String {
+        format!("{} {}", ObjToken::F, self.to_string())
+    }
 }
 
 impl fmt::Display for Face {
@@ -279,14 +311,9 @@ impl fmt::Display for Face {
         let s = self
             .face_defs
             .iter()
-            .map(|fd| {
-                format!(
-                    "{},{},{}",
-                    fd.vertex_index, fd.uv_texture_index, fd.normal_index,
-                )
-            })
+            .map(|fd| fd.to_string())
             .collect::<Vec<String>>()
-            .join(",");
+            .join(" ");
 
         write!(f, "{}", s)
     }
@@ -387,8 +414,12 @@ impl Obj3D {
         Ok(objs)
     }
 
+    pub fn parse_string_n(s: impl Into<String>, n: usize) -> Result<Option<Self>, Error> {
+        Self::parse_string(s).map(|objs| objs.get(n).cloned())
+    }
+
     pub fn parse_string_first(s: impl Into<String>) -> Result<Option<Self>, Error> {
-        Self::parse_string(s).map(|objs| objs.first().cloned())
+        Self::parse_string_n(s, 1)
     }
 
     pub fn parse_string_single(s: impl Into<String>) -> Result<Self, Error> {
@@ -404,9 +435,13 @@ impl Obj3D {
         Self::parse_string(content)
     }
 
-    pub fn parse_first(path: impl Into<PathBuf>) -> Result<Option<Self>, Error> {
+    pub fn parse_n(path: impl Into<PathBuf>, n: usize) -> Result<Option<Self>, Error> {
         let content = fs::read_to_string(path.into())?;
-        Self::parse_string_first(content)
+        Self::parse_string_n(content, n)
+    }
+
+    pub fn parse_first(path: impl Into<PathBuf>) -> Result<Option<Self>, Error> {
+        Self::parse_n(path, 1)
     }
 
     pub fn parse_single(path: impl Into<PathBuf>) -> Result<Self, Error> {
@@ -416,6 +451,10 @@ impl Obj3D {
         }
         Err(Error::ParseSingleObj(objs.len()))
     }
+
+    pub fn write_to_file(&self, path: impl Into<PathBuf>) -> Result<(), Error> {
+        fs::write(path.into(), self.to_string() + "\n").map_err(|err| Error::IO(err))
+    }
 }
 
 impl FromStr for Obj3D {
@@ -423,5 +462,27 @@ impl FromStr for Obj3D {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse_string_single(s)
+    }
+}
+
+impl fmt::Display for Obj3D {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut lines = Vec::new();
+
+        if let Some(name) = &self.name {
+            lines.push(format!("{} {}", ObjToken::O, name));
+        }
+
+        self.vertices.iter().for_each(|v| lines.push(v.to_line()));
+        self.normals.iter().for_each(|n| lines.push(n.to_line()));
+        self.uv_textures
+            .iter()
+            .for_each(|t| lines.push(t.to_line()));
+
+        lines.push(self.smoothing.to_line());
+
+        self.faces.iter().for_each(|f| lines.push(f.to_line()));
+
+        write!(f, "{}", lines.join("\n"))
     }
 }

@@ -5,9 +5,6 @@ use std::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Generic {0}")]
-    Generic(String),
-
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
@@ -38,6 +35,6 @@ pub enum Error {
     #[error("Expected smoothing string in the format: 's [s]'")]
     InvalidSmoothingFormat,
 
-    #[error("Expected face definition string in the format: '[i]/[j]/[k]'")]
+    #[error("Expected face definition string in the format: 'f [i]/[j]/[k] [l]/[m]/[n] ...'")]
     InvalidFaceDefinitionString,
 }

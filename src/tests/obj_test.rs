@@ -57,20 +57,91 @@ fn test_obj3d_new_with_name() {
 
 #[test]
 fn test_obj3d_parse_string() {
+    let objs = Obj3D::parse_string(include_str!("../../assets/wall_with_door_gap.obj")).unwrap();
+
+    assert_eq!(objs.len(), 1);
+
+    for o in objs {
+        assert_eq!(o.name, Some("Plane".to_owned()));
+        // TODO: ...
+        // assert_eq!(o.vertices,);
+        // assert_eq!(o.normals,);
+        // assert_eq!(o.uv_textures,);
+        assert_eq!(o.smoothing, Smoothing(0));
+        // assert_eq!(o.faces, );
+    }
+}
+
+#[test]
+fn test_obj3d_parse_string_first() {
+    let o = Obj3D::parse_string_first(include_str!("../../assets/wall_with_door_gap.obj"))
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(o.name, Some("Plane".to_owned()));
     // TODO: ...
+    // assert_eq!(o.vertices,);
+    // assert_eq!(o.normals,);
+    // assert_eq!(o.uv_textures,);
+    assert_eq!(o.smoothing, Smoothing(0));
+    // assert_eq!(o.faces, );
 }
 
 #[test]
 fn test_obj3d_parse_string_single() {
+    let o =
+        Obj3D::parse_string_single(include_str!("../../assets/wall_with_door_gap.obj")).unwrap();
+
+    assert_eq!(o.name, Some("Plane".to_owned()));
     // TODO: ...
+    // assert_eq!(o.vertices,);
+    // assert_eq!(o.normals,);
+    // assert_eq!(o.uv_textures,);
+    assert_eq!(o.smoothing, Smoothing(0));
+    // assert_eq!(o.faces, );
 }
 
 #[test]
 fn test_obj3d_parse() {
+    let objs = Obj3D::parse("assets/wall_with_door_gap.obj").unwrap();
+
+    assert_eq!(objs.len(), 1);
+
+    for o in objs {
+        assert_eq!(o.name, Some("Plane".to_owned()));
+        // TODO: ...
+        // assert_eq!(o.vertices,);
+        // assert_eq!(o.normals,);
+        // assert_eq!(o.uv_textures,);
+        assert_eq!(o.smoothing, Smoothing(0));
+        // assert_eq!(o.faces, );
+    }
+}
+
+#[test]
+fn test_obj3d_parse_first() {
+    let o = Obj3D::parse_first("assets/wall_with_door_gap.obj")
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(o.name, Some("Plane".to_owned()));
     // TODO: ...
+    // assert_eq!(o.vertices,);
+    // assert_eq!(o.normals,);
+    // assert_eq!(o.uv_textures,);
+    assert_eq!(o.smoothing, Smoothing(0));
+    // assert_eq!(o.faces, );
 }
 
 #[test]
 fn test_obj3d_parse_single() {
+    let o = Obj3D::parse_single("assets/wall_with_door_gap.obj").unwrap();
+
+    assert_eq!(o.name, Some("Plane".to_owned()));
     // TODO: ...
+    // assert_eq!(o.vertices,);
+    // assert_eq!(o.normals,);
+    // assert_eq!(o.uv_textures,);
+    assert_eq!(o.smoothing, Smoothing(0));
+    // assert_eq!(o.faces, );
 }
