@@ -20,7 +20,7 @@ macro_rules! mesh_fn_from_obj {
 
             for face in &o.faces {
                 for fd in &face.face_defs {
-                    positions.push(o.vertecies[fd.vertex_index].to_arr());
+                    positions.push(o.vertices[fd.vertex_index].to_arr());
                     uv.push(o.uv_textures[fd.uv_texture_index].to_arr());
                     normals.push(o.normals[fd.normal_index].to_arr());
                     indeces.push(i);

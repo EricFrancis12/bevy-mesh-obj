@@ -1,6 +1,7 @@
 use crate::error::Error;
 use std::{fmt, fs, path::PathBuf, str::FromStr};
 
+#[derive(Eq, PartialEq)]
 enum ObjToken {
     O,
     V,
@@ -35,12 +36,12 @@ impl FromStr for ObjToken {
             "vt" => Ok(ObjToken::Vt),
             "s" => Ok(ObjToken::S),
             "f" => Ok(ObjToken::F),
-            _ => Err(Error::Generic(format!("Invalid token: {}", s))),
+            _ => Err(Error::UnrecognizedToken(s.to_owned())),
         }
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vertex {
     pub x: f32,
     pub y: f32,
@@ -48,7 +49,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    fn new(x: f32, y: f32, z: f32) -> Self {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
 
@@ -63,7 +64,39 @@ impl fmt::Display for Vertex {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+impl TryFrom<&[&str]> for Vertex {
+    type Error = crate::error::Error;
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        match value {
+            [x_str, y_str, z_str] => Ok(Self::new(
+                x_str.parse::<f32>()?,
+                y_str.parse::<f32>()?,
+                z_str.parse::<f32>()?,
+            )),
+            [token_str, x_str, y_str, z_str]
+                if ObjToken::from_str(token_str).ok() == Some(ObjToken::V) =>
+            {
+                Ok(Self::new(
+                    x_str.parse::<f32>()?,
+                    y_str.parse::<f32>()?,
+                    z_str.parse::<f32>()?,
+                ))
+            }
+            _ => Err(Error::InvalidVertexFormat),
+        }
+    }
+}
+
+impl FromStr for Vertex {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s.split(" ").collect::<Vec<&str>>().as_slice())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Normal {
     pub x: f32,
     pub y: f32,
@@ -71,7 +104,7 @@ pub struct Normal {
 }
 
 impl Normal {
-    fn new(x: f32, y: f32, z: f32) -> Self {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
 
@@ -86,14 +119,46 @@ impl fmt::Display for Normal {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+impl TryFrom<&[&str]> for Normal {
+    type Error = crate::error::Error;
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        match value {
+            [x_str, y_str, z_str] => Ok(Self::new(
+                x_str.parse::<f32>()?,
+                y_str.parse::<f32>()?,
+                z_str.parse::<f32>()?,
+            )),
+            [token_str, x_str, y_str, z_str]
+                if ObjToken::from_str(token_str).ok() == Some(ObjToken::Vn) =>
+            {
+                Ok(Self::new(
+                    x_str.parse::<f32>()?,
+                    y_str.parse::<f32>()?,
+                    z_str.parse::<f32>()?,
+                ))
+            }
+            _ => Err(Error::InvalidNormalFormat),
+        }
+    }
+}
+
+impl FromStr for Normal {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s.split(" ").collect::<Vec<&str>>().as_slice())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UVTexture {
     pub h: f32,
     pub v: f32,
 }
 
 impl UVTexture {
-    fn new(h: f32, v: f32) -> Self {
+    pub fn new(h: f32, v: f32) -> Self {
         Self { h, v }
     }
 
@@ -108,7 +173,62 @@ impl fmt::Display for UVTexture {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+impl TryFrom<&[&str]> for UVTexture {
+    type Error = crate::error::Error;
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        match value {
+            [h_str, v_str] => Ok(Self::new(h_str.parse::<f32>()?, v_str.parse::<f32>()?)),
+            [token_str, h_str, v_str]
+                if ObjToken::from_str(token_str).ok() == Some(ObjToken::Vt) =>
+            {
+                Ok(Self::new(h_str.parse::<f32>()?, v_str.parse::<f32>()?))
+            }
+            _ => Err(Error::InvalidUVTextureFormat),
+        }
+    }
+}
+
+impl FromStr for UVTexture {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s.split(" ").collect::<Vec<&str>>().as_slice())
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Smoothing(pub u8);
+
+impl fmt::Display for Smoothing {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl TryFrom<&[&str]> for Smoothing {
+    type Error = crate::error::Error;
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        match value {
+            [s] => Self::from_str(s),
+            _ => Err(Error::InvalidSmoothingFormat),
+        }
+    }
+}
+
+impl FromStr for Smoothing {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.to_lowercase() == "off" {
+            return Ok(Smoothing(0));
+        }
+        Ok(Smoothing(s.parse::<u8>()?))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FaceDefinition {
     pub vertex_index: usize,
     pub normal_index: usize,
@@ -116,7 +236,7 @@ pub struct FaceDefinition {
 }
 
 impl FaceDefinition {
-    fn new(vertex_index: usize, normal_index: usize, uv_texture_index: usize) -> Self {
+    pub fn new(vertex_index: usize, normal_index: usize, uv_texture_index: usize) -> Self {
         Self {
             vertex_index,
             normal_index,
@@ -139,17 +259,17 @@ impl FromStr for FaceDefinition {
             return Ok(Self::new(v, vn, vt));
         }
 
-        Err(Error::Generic("error parsing from string".to_owned()))
+        Err(Error::InvalidFaceDefinitionString)
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Face {
     pub face_defs: Vec<FaceDefinition>,
 }
 
 impl Face {
-    fn new(face_defs: Vec<FaceDefinition>) -> Self {
+    pub fn new(face_defs: Vec<FaceDefinition>) -> Self {
         Self { face_defs }
     }
 }
@@ -175,25 +295,25 @@ impl fmt::Display for Face {
 #[derive(Clone, Debug, Default)]
 pub struct Obj3D {
     pub name: Option<String>,
-    pub vertecies: Vec<Vertex>,
+    pub vertices: Vec<Vertex>,
     pub normals: Vec<Normal>,
     pub uv_textures: Vec<UVTexture>,
-    pub smoothing: u8,
+    pub smoothing: Smoothing,
     pub faces: Vec<Face>,
 }
 
 impl Obj3D {
     pub fn new(
         name: Option<String>,
-        vertecies: Vec<Vertex>,
+        vertices: Vec<Vertex>,
         normals: Vec<Normal>,
         uv_textures: Vec<UVTexture>,
-        smoothing: u8,
+        smoothing: Smoothing,
         faces: Vec<Face>,
     ) -> Self {
         Self {
             name,
-            vertecies,
+            vertices,
             normals,
             uv_textures,
             smoothing,
@@ -201,137 +321,64 @@ impl Obj3D {
         }
     }
 
-    pub fn new_with_name(name: Option<String>) -> Self {
+    pub fn new_with_name(name: impl Into<String>) -> Self {
         Self {
-            name,
+            name: Some(name.into()),
             ..Default::default()
         }
     }
+
     pub fn parse_string(s: impl Into<String>) -> Result<Vec<Self>, Error> {
         let content = s.into();
-        let lines: Vec<&str> = content.split("\n").collect();
-
         let mut objs: Vec<Self> = Vec::new();
 
-        for (i, line) in lines.iter().enumerate() {
-            let n = i + 1;
+        for line in &content.split("\n").collect::<Vec<&str>>() {
             let tokens: Vec<&str> = line.split(" ").map(|s| s.trim()).collect();
+            let tail = &tokens[1..];
 
-            if let Some(s) = tokens.get(0) {
-                if let Ok(obj_token) = ObjToken::from_str(s) {
-                    match obj_token {
-                        ObjToken::O => {
-                            objs.push(Self::new_with_name(tokens.get(1).map(|s| (*s).to_owned())));
+            if let Some(obj_token) = tokens.get(0).and_then(|s| ObjToken::from_str(s).ok()) {
+                match obj_token {
+                    ObjToken::O => {
+                        if let [_, name] = tokens.as_slice() {
+                            objs.push(Self::new_with_name(*name));
                         }
-                        ObjToken::V => {
-                            let xyz = &tokens[1..];
-                            if let [x_str, y_str, z_str] = xyz {
-                                if let Some(obj) = objs.last_mut() {
-                                    let x = x_str.parse::<f32>()?;
-                                    let y = y_str.parse::<f32>()?;
-                                    let z = z_str.parse::<f32>()?;
+                    }
+                    ObjToken::V => {
+                        objs.last_mut()
+                            .ok_or_else(|| Error::MissingObjectDeclaration)?
+                            .vertices
+                            .push(Vertex::try_from(tail)?);
+                    }
+                    ObjToken::Vn => {
+                        objs.last_mut()
+                            .ok_or_else(|| Error::MissingObjectDeclaration)?
+                            .normals
+                            .push(Normal::try_from(tail)?);
+                    }
+                    ObjToken::Vt => {
+                        objs.last_mut()
+                            .ok_or_else(|| Error::MissingObjectDeclaration)?
+                            .uv_textures
+                            .push(UVTexture::try_from(tail)?);
+                    }
+                    ObjToken::S => {
+                        objs.last_mut()
+                            .ok_or_else(|| Error::MissingObjectDeclaration)?
+                            // TODO: handle possibility where there are multiple s tokens in a single object,
+                            // instead of overriding the previous value?
+                            .smoothing = Smoothing::try_from(tail)?
+                    }
+                    ObjToken::F => {
+                        let obj = objs
+                            .last_mut()
+                            .ok_or_else(|| Error::MissingObjectDeclaration)?;
 
-                                    obj.vertecies.push(Vertex::new(x, y, z));
-                                } else {
-                                    return Err(Error::Generic(format!(
-                                        "line {}: expected object declaration",
-                                        n
-                                    )));
-                                }
-                            } else {
-                                return Err(Error::Generic(format!(
-                                    "line {}: expected 3 values, but got {}",
-                                    n,
-                                    xyz.len()
-                                )));
-                            };
-                        }
-                        ObjToken::Vn => {
-                            let xyz = &tokens[1..];
-                            if let [x_str, y_str, z_str] = xyz {
-                                if let Some(obj) = objs.last_mut() {
-                                    let x = x_str.parse::<f32>()?;
-                                    let y = y_str.parse::<f32>()?;
-                                    let z = z_str.parse::<f32>()?;
+                        let face_defs = tail
+                            .iter()
+                            .map(|face_str| FaceDefinition::from_str(face_str))
+                            .collect::<Result<_, _>>()?;
 
-                                    obj.normals.push(Normal::new(x, y, z));
-                                } else {
-                                    return Err(Error::Generic(format!(
-                                        "line {}: expected object declaration",
-                                        n
-                                    )));
-                                }
-                            } else {
-                                return Err(Error::Generic(format!(
-                                    "line {}: expected 3 values, but got {}",
-                                    n,
-                                    xyz.len()
-                                )));
-                            };
-                        }
-                        ObjToken::Vt => {
-                            let vh = &tokens[1..];
-                            if let [v_str, h_str] = vh {
-                                if let Some(obj) = objs.last_mut() {
-                                    let v = v_str.parse::<f32>()?;
-                                    let h = h_str.parse::<f32>()?;
-
-                                    obj.uv_textures.push(UVTexture::new(v, h));
-                                } else {
-                                    return Err(Error::Generic(format!(
-                                        "line {}: expected object declaration",
-                                        n
-                                    )));
-                                }
-                            } else {
-                                return Err(Error::Generic(format!(
-                                    "line {}: expected 2 values, but got {}",
-                                    n,
-                                    vh.len()
-                                )));
-                            };
-                        }
-                        ObjToken::S => {
-                            let smoothing_slice = &tokens[1..];
-                            if let [smoothing] = smoothing_slice {
-                                if let Some(obj) = objs.last_mut() {
-                                    // TODO: handle possibility where there are multiple s tokens in a single object
-                                    if smoothing.to_lowercase() == "off" {
-                                        obj.smoothing = 0;
-                                    } else {
-                                        obj.smoothing = smoothing.parse::<u8>()?;
-                                    }
-                                } else {
-                                    return Err(Error::Generic(format!(
-                                        "line {}: expected object declaration",
-                                        n
-                                    )));
-                                }
-                            } else {
-                                return Err(Error::Generic(format!(
-                                    "line {}: expected 1 value, but got {}",
-                                    n,
-                                    smoothing_slice.len()
-                                )));
-                            };
-                        }
-                        ObjToken::F => {
-                            if let Some(obj) = objs.last_mut() {
-                                let faces_slice = &tokens[1..];
-
-                                let mut face_defs = Vec::new();
-                                for face_str in faces_slice {
-                                    face_defs.push(FaceDefinition::from_str(face_str)?);
-                                }
-
-                                obj.faces.push(Face::new(face_defs));
-                            } else {
-                                return Err(Error::Generic(format!(
-                                    "line {}: expected object declaration",
-                                    n
-                                )));
-                            }
-                        }
+                        obj.faces.push(Face::new(face_defs));
                     }
                 }
             }
@@ -340,29 +387,41 @@ impl Obj3D {
         Ok(objs)
     }
 
-    pub fn parse_string_single(s: impl Into<String>) -> Result<Self, Error> {
-        let content = s.into();
-        match Self::parse_string(content) {
-            Ok(objs) => match objs.get(0) {
-                Some(obj) => Ok(obj.clone()),
-                None => Err(Error::Generic("no objects found".to_owned())),
-            },
-            Err(err) => Err(err),
-        }
+    pub fn parse_string_first(s: impl Into<String>) -> Result<Option<Self>, Error> {
+        Self::parse_string(s).map(|objs| objs.first().cloned())
     }
 
-    pub fn parse_single(path: impl Into<PathBuf>) -> Result<Self, Error> {
-        match Self::parse(path) {
-            Ok(objs) => match objs.get(0) {
-                Some(obj) => Ok(obj.clone()),
-                None => Err(Error::Generic("no objects found".to_owned())),
-            },
-            Err(err) => Err(err),
+    pub fn parse_string_single(s: impl Into<String>) -> Result<Self, Error> {
+        let objs = Self::parse_string(s.into())?;
+        if let [obj] = objs.as_slice() {
+            return Ok(obj.clone());
         }
+        Err(Error::ParseSingleObj(objs.len()))
     }
 
     pub fn parse(path: impl Into<PathBuf>) -> Result<Vec<Self>, Error> {
         let content = fs::read_to_string(path.into())?;
         Self::parse_string(content)
+    }
+
+    pub fn parse_first(path: impl Into<PathBuf>) -> Result<Option<Self>, Error> {
+        let content = fs::read_to_string(path.into())?;
+        Self::parse_string_first(content)
+    }
+
+    pub fn parse_single(path: impl Into<PathBuf>) -> Result<Self, Error> {
+        let objs = Self::parse(path)?;
+        if let [obj] = objs.as_slice() {
+            return Ok(obj.clone());
+        }
+        Err(Error::ParseSingleObj(objs.len()))
+    }
+}
+
+impl FromStr for Obj3D {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse_string_single(s)
     }
 }
