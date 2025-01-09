@@ -1,6 +1,6 @@
 # Blender 4.2.3 LTS
 # www.blender.org
-o Plane
+o wall_with_door_gap
 v -2.000000 -2.000000 -0.000000
 v 2.000000 -2.000000 -0.000000
 v -2.000000 2.000000 0.000000

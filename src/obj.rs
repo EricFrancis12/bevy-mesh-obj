@@ -58,7 +58,7 @@ impl Vertex {
     }
 
     fn to_line(&self) -> String {
-        format!("{} {}", ObjToken::V, self.to_string())
+        format!("{} {}", ObjToken::V, self)
     }
 }
 
@@ -117,7 +117,7 @@ impl Normal {
     }
 
     fn to_line(&self) -> String {
-        format!("{} {}", ObjToken::Vn, self.to_string())
+        format!("{} {}", ObjToken::Vn, self)
     }
 }
 
@@ -175,7 +175,7 @@ impl UVTexture {
     }
 
     fn to_line(&self) -> String {
-        format!("{} {}", ObjToken::Vt, self.to_string())
+        format!("{} {}", ObjToken::Vt, self)
     }
 }
 
@@ -214,7 +214,7 @@ pub struct Smoothing(pub u8);
 
 impl Smoothing {
     fn to_line(&self) -> String {
-        format!("{} {}", ObjToken::S, self.to_string())
+        format!("{} {}", ObjToken::S, self)
     }
 }
 
@@ -302,7 +302,7 @@ impl Face {
     }
 
     fn to_line(&self) -> String {
-        format!("{} {}", ObjToken::F, self.to_string())
+        format!("{} {}", ObjToken::F, self)
     }
 }
 
@@ -415,7 +415,10 @@ impl Obj3D {
     }
 
     pub fn parse_string_n(s: impl Into<String>, n: usize) -> Result<Option<Self>, Error> {
-        Self::parse_string(s).map(|objs| objs.get(n).cloned())
+        if n == 0 {
+            return Ok(None);
+        }
+        Self::parse_string(s).map(|objs| objs.get(n - 1).cloned())
     }
 
     pub fn parse_string_first(s: impl Into<String>) -> Result<Option<Self>, Error> {
