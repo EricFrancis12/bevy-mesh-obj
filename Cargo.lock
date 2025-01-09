@@ -305,14 +305,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy-mesh-obj"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "thiserror 2.0.6",
-]
-
-[[package]]
 name = "bevy_a11y"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -749,6 +741,14 @@ dependencies = [
  "serde",
  "smallvec",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "bevy_mesh_obj"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "thiserror 2.0.6",
 ]
 
 [[package]]
