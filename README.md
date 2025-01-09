@@ -108,4 +108,4 @@ f 1/1/1 2/2/1 3/3/1
 
 
 ## Contributing
-I would be more than happy to accept your contribution if you have an valuable addition to this project. Please fork this repository, create a branch, and submit a pull request.
+I would be more than happy to accept your contribution if you have a valuable addition to this project. Please fork this repository, create a branch, and submit a pull request.
