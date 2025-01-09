@@ -86,14 +86,40 @@ This crate handles parsing the following tokens from an .obj file:
 Here is an example of a basic .obj file:
 
 ```
+# Name
 o Cube
+
+# Vertices
 v 1.0 1.0 1.0
 v -1.0 1.0 1.0
 v -1.0 -1.0 1.0
 v 1.0 -1.0 1.0
+v 1.0 1.0 -1.0
+v -1.0 1.0 -1.0
+v -1.0 -1.0 -1.0
+v 1.0 -1.0 -1.0
+
+# Normals
 vn 0.0 0.0 1.0
+vn 0.0 0.0 -1.0
+vn 1.0 0.0 0.0
+vn -1.0 0.0 0.0
+vn 0.0 1.0 0.0
+vn 0.0 -1.0 0.0
+
+# Texture Coordinates
 vt 0.0 0.0
-f 1/1/1 2/2/1 3/3/1
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+
+# Faces (using 1-based index notation)
+f 1/1/1 2/2/1 3/3/1 4/4/1  # Front face
+f 5/1/2 6/2/2 7/3/2 8/4/2  # Back face
+f 1/1/3 2/2/3 6/3/5 5/4/5  # Top face
+f 4/1/5 3/2/5 7/3/5 8/4/5  # Bottom face
+f 1/1/4 4/2/4 8/3/4 5/4/4  # Right face
+f 2/1/6 3/2/6 7/3/6 6/4/6  # Left face
 ```
 
 - `o` Cube defines the object name.
