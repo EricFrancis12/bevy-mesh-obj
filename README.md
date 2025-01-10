@@ -14,7 +14,7 @@ This crate provides utilities to parse Wavefront `.obj` files, handle 3D object 
 Add the **bevy_mesh_obj** crate: 
 
 ```bash
-cargo add bevy_third_person_camera
+cargo add bevy_mesh_obj
 ```
 
 ## Limitations
