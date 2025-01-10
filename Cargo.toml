@@ -1,6 +1,6 @@
 [package]
 name = "bevy_mesh_obj"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Parse Wavefront .obj files into Bevy Meshes"
 keywords = ["bevy", "wavefront", "obj", "gamedev"]
